@@ -1,0 +1,12 @@
+deta==1.1.0
+fastapi==0.95.0
+Jinja2==3.1.2
+requests
+uvicorn==0.21.1
+instaloader
+json_repair
+aiohttp
+#python-telegram-bot
+pyrogram
+tgcrypto
+python-dotenv
