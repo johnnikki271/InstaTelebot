@@ -590,7 +590,7 @@ async def upload_and_send_all_post(datalist,chat_id):
       "username": username,
       "media_count": "",
       "Tracking": False,
-      "chat_id":chat_id
+      "chat_id":f'{chat_id};'
     }
    master_db = deta.Base("Instagram_Master")
    master_db.put(master_data)
@@ -890,7 +890,7 @@ async def json_to_base_db(username, json_string,_chat_id):
       "username": username,
       "media_count": json_data["count"],
       "Tracking": True,
-      "chat_id":_chat_id
+      "chat_id":f'{_chat_id};'
   }
   master_db = deta.Base("Instagram_Master")
   master_db.put(master_data)
