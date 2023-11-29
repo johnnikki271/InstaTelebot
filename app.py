@@ -79,6 +79,19 @@ def video_to_thumbnail(video_file, thumbnail_file, time):
       print(str(e))
       return None 
 
+def video_duration(video_file):
+    try:
+        # Extract duration information
+        duration_command = ["ffprobe", "-v", "quiet", "-of", "json", "-show_format", video_file]
+        duration_output = subprocess.run(duration_command, capture_output=True)
+        duration_json = json.loads(duration_output.stdout.decode())
+        duration = duration_json["format"]["duration"]
+        return duration
+        
+    except Exception as e:
+        print(str(e))
+        return None
+
 async def get_post_details_by_shortcode(_shortcode,_username):
     try:
         db = deta.Base(_username)
@@ -202,24 +215,27 @@ async def send_telegram_media(file_name,_caption, _chat_id, _fileName,_height,_w
         file_id = None
         try:
             if extension == ".mp4":
-              thumb_media_file_name  = video_to_thumbnail(file_name, f'thumb_{root}.jpg', "00:00:01.000")
+              if not os.path.exists(f'thumb_{root}.jpg'):
+                thumb_media_file_name  = video_to_thumbnail(file_name, f'thumb_{root}.jpg', "00:00:01.000")
+              duration =  round(float(video_duration(file_name)))
               if os.path.exists(f'thumb_{root}.jpg'):
                  thumb = f'thumb_{root}.jpg'
               else:
                  thumb = None
             # Send the video with the custom progress function
               #await pyroapp.send_video(chat_id  = _chat_id, video = file_name,caption = _caption,height = _height,width =_width,supports_streaming=True,reply_markup=keyboard, progress=progress, progress_args=(message, start))
-              telegram_message =  await pyroapp.send_video(chat_id  = _chat_id, video = file_name,caption = _new_caption,height = _height,width =_width,supports_streaming=True,reply_markup=keyboard,thumb=thumb)
+              telegram_message =  await pyroapp.send_video(chat_id  = _chat_id, video = file_name,caption = _new_caption,height = _height,width =_width,supports_streaming=True,reply_markup=keyboard,thumb=thumb,duration=duration)
               file_id = telegram_message.video.file_id
             elif extension == ".jpg":
               #await pyroapp.send_photo(chat_id  = _chat_id, photo = file_name,caption = _caption,reply_markup=keyboard, progress=progress, progress_args=(message, start))
               telegram_message = await pyroapp.send_photo(chat_id  = _chat_id, photo = file_name,caption = _new_caption,reply_markup=keyboard)
             #elif extension == "":
                #telegram_message =  await pyroapp.send_video(chat_id  = _chat_id, video = file_name,caption = _new_caption,height = _height,width =_width,supports_streaming=True,reply_markup=keyboard)
-        except:
+        except Exception as e:
+          print(e)
           time.sleep(5)
           if extension == ".mp4":
-            telegram_message = await pyroapp.send_video(chat_id  = _chat_id, video = file_name,caption = _new_caption,height = _height,width =_width,supports_streaming=True,reply_markup=keyboard,thumb=thumb)
+            telegram_message = await pyroapp.send_video(chat_id  = _chat_id, video = file_name,caption = _new_caption,height = _height,width =_width,supports_streaming=True,reply_markup=keyboard,thumb=thumb,duration=duration)
             file_id = telegram_message.video.file_id
           elif extension == ".jpg":
             telegram_message = await pyroapp.send_photo(chat_id  = _chat_id, photo = file_name,caption = _new_caption,reply_markup=keyboard)
