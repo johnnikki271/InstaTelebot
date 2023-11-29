@@ -1347,25 +1347,25 @@ async def get_profile_by_username(username,_chat_id):
                 media_count = item.get('media_count')
                 cache_count = "0"
                 userExist,isSubscribed = get_subscription(username)
+                cache_user_db = deta.Base(username)
+                cache_response = cache_user_db.fetch()
+                cache_count = str(len(cache_response.items))
                 if isSubscribed:
-                  cache_user_db = deta.Base(username)
-                  cache_response = cache_user_db.fetch()
-                  cache_count = str(len(cache_response.items))
                   keyboard = InlineKeyboardMarkup([
                     [ # Row 1 button
                         InlineKeyboardButton(
                             text=f'All Media :{media_count}',
-                            callback_data=f'allmedia_{user_id}'
+                            callback_data=f'allmedia?_{user_id}'
                         ),
                         InlineKeyboardButton(
                             text=f'Cache :{cache_count}',
-                            callback_data=f'getCache_{username}'
+                            callback_data=f'getCache?_{username}'
                         )
                     ],
                     [ # Row 2 button
                         InlineKeyboardButton(
                             text=f'✔️ subscribed',
-                            callback_data=f'getsubscription_{username}_{user_id}'
+                            callback_data=f'getsubscription?_{username}?_{user_id}'
                         )
                     ]
                   ])
@@ -1374,17 +1374,17 @@ async def get_profile_by_username(username,_chat_id):
                       [ # Row 1 button
                           InlineKeyboardButton(
                               text=f'All Media :{media_count}',
-                              callback_data=f'allmedia_{user_id}'
+                              callback_data=f'allmedia?_{user_id}'
                           ),
                           InlineKeyboardButton(
                               text=f'Cache :{cache_count}',
-                              callback_data=f'getCache_{username}'
+                              callback_data=f'getCache?_{username}'
                           )
                       ],
                       [ # Row 2 button
                           InlineKeyboardButton(
                               text=f'➕ Subscribe',
-                              callback_data=f'getsubscription_{username}_{user_id}'
+                              callback_data=f'getsubscription?_{username}?_{user_id}'
                           )
                       ]
                   ])
@@ -1491,16 +1491,16 @@ async def http_handler(request: Request, background_tasks: BackgroundTasks):
         #return await send_error(None, "Unknown error, lol, handling coming soon")
     
     if "allmedia" in prompt:
-       userid = prompt.split("_")[1]
+       userid = prompt.split("?_")[1]
        background_tasks.add_task(get_all_instagram_posts_rotateKey, userid=userid, count=50,_chat_id=chat_id)
        return
     
     if "getCache" in prompt:
-        username = prompt.split("_")[1]
+        username = prompt.split("?_")[1]
         background_tasks.add_task(get_all_Post_from_DB, username=username, _chat_id=chat_id)
         return
     if "getsubscription" in  prompt:
-      data_list = prompt.split("_")
+      data_list = prompt.split("?_")
       username = data_list[1]
       userdata = callback_data["message"]["reply_markup"]["inline_keyboard"][0]
       media_count = userdata[0].get('text',{}).split(":")[1]
@@ -1527,17 +1527,17 @@ async def http_handler(request: Request, background_tasks: BackgroundTasks):
             [ # Row 1 button
                 InlineKeyboardButton(
                     text=f'All Media :{media_count}',
-                    callback_data=f'allmedia_{user_id}'
+                    callback_data=f'allmedia?_{user_id}'
                 ),
                 InlineKeyboardButton(
                     text=f'Cache :{cache_count}',
-                    callback_data=f'getCache_{username}'
+                    callback_data=f'getCache?_{username}'
                 )
             ],
             [ # Row 2 button
                 InlineKeyboardButton(
                     text=f'✔️ subscribed',
-                    callback_data=f'getsubscription_{username}_{user_id}'
+                    callback_data=f'getsubscription?_{username}?_{user_id}'
                 )
             ]
         ])
@@ -1548,17 +1548,17 @@ async def http_handler(request: Request, background_tasks: BackgroundTasks):
             [ # Row 1 button
                 InlineKeyboardButton(
                     text=f'All Media :{media_count}',
-                    callback_data=f'allmedia_{user_id}'
+                    callback_data=f'allmedia?_{user_id}'
                 ),
                 InlineKeyboardButton(
                     text=f'Cache :{cache_count}',
-                    callback_data=f'getCache_{username}'
+                    callback_data=f'getCache?_{username}'
                 )
             ],
             [ # Row 2 button
                 InlineKeyboardButton(
                     text=f'✔️ subscribed',
-                    callback_data=f'getsubscription_{username}_{user_id}'
+                    callback_data=f'getsubscription?_{username}?_{user_id}'
                 )
             ]
         ])
@@ -1569,17 +1569,17 @@ async def http_handler(request: Request, background_tasks: BackgroundTasks):
             [ # Row 1 button
                 InlineKeyboardButton(
                     text=f'All Media :{media_count}',
-                    callback_data=f'allmedia_{user_id}'
+                    callback_data=f'allmedia?_{user_id}'
                 ),
                 InlineKeyboardButton(
                     text=f'Cache :{cache_count}',
-                    callback_data=f'getCache_{username}'
+                    callback_data=f'getCache?_{username}'
                 )
             ],
             [ # Row 2 button
                 InlineKeyboardButton(
                     text=f'➕ Subscribe',
-                    callback_data=f'getsubscription_{username}_{user_id}'
+                    callback_data=f'getsubscription?_{username}?_{user_id}'
                 )
             ]
         ])
