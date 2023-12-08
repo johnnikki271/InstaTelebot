@@ -178,7 +178,6 @@ async def upload_file_by_username(url,file_type, _dest_file_name, _dest_folder_n
     #os.remove(file_path)
     return file_path
 
-# Define a custom progress function
 async def progress(current, total, message, start):
     # Calculate the percentage and the elapsed time
     percentage = current * 100 / total
@@ -810,34 +809,46 @@ async def get_update_post_handler():
 #210233aecbmsh61a7cefbf2c880cp18192cjsnfa3cbdb526ff
 #9695caae8cmsh5842b4bfafdfb1bp1f2bb8jsncb130fa8e8be
 async def get_instagram_post_by_shortcode(_shortcode):
-  url = f"https://instagram-bulk-profile-scrapper.p.rapidapi.com/clients/api/ig/media_by_id?shortcode={_shortcode}&response_type=feeds"
-  headers = {
-      'X-RapidAPI-Key': "210233aecbmsh61a7cefbf2c880cp18192cjsnfa3cbdb526ff",
-      'X-RapidAPI-Host': "instagram-bulk-profile-scrapper.p.rapidapi.com"
-  }
-  async with aiohttp.ClientSession() as session:
-      async with session.get(url, headers=headers) as resp:
-        data = await resp.text()
-        print(data)
-        if resp.status == 200:
-           return data
-        else :
-          return None
+  try:
+    rapid_db = deta.Base("Rapid_API_Keys")
+    response = rapid_db.fetch({"api_name": "Instagram-Data"})
+    for item in response.items:
+      Rapid_api_key = item["key"]
+      url = f"https://instagram-bulk-profile-scrapper.p.rapidapi.com/clients/api/ig/media_by_id?shortcode={_shortcode}&response_type=feeds"
+      headers = {
+          'X-RapidAPI-Key': Rapid_api_key,
+          'X-RapidAPI-Host': "instagram-bulk-profile-scrapper.p.rapidapi.com"
+      }
+      async with aiohttp.ClientSession() as session:
+          async with session.get(url, headers=headers) as resp:
+            data = await resp.text()
+            print(data)
+            if resp.status == 200:
+                return data
+  except Exception as e:
+    print(e)
+    return None
         
 async def get_instagram_newpost_by_username(username):
-  url = f"https://instagram-bulk-profile-scrapper.p.rapidapi.com/clients/api/ig/ig_profile?ig={username}&response_type=feeds"
-  headers = {
-      'X-RapidAPI-Key': "210233aecbmsh61a7cefbf2c880cp18192cjsnfa3cbdb526ff",
-      'X-RapidAPI-Host': "instagram-bulk-profile-scrapper.p.rapidapi.com"
-  }
-  async with aiohttp.ClientSession() as session:
-      async with session.get(url, headers=headers) as resp:
-        data = await resp.text()
-        print(data)
-        if resp.status == 200:
-           return data
-        else :
-          return None
+  try:
+    rapid_db = deta.Base("Rapid_API_Keys")
+    response = rapid_db.fetch({"api_name": "Instagram-Data"})
+    for item in response.items:
+      Rapid_api_key = item["key"]
+      url = f"https://instagram-bulk-profile-scrapper.p.rapidapi.com/clients/api/ig/ig_profile?ig={username}&response_type=feeds"
+      headers = {
+          'X-RapidAPI-Key': Rapid_api_key,
+          'X-RapidAPI-Host': "instagram-bulk-profile-scrapper.p.rapidapi.com"
+      }
+      async with aiohttp.ClientSession() as session:
+          async with session.get(url, headers=headers) as resp:
+            data = await resp.text()
+            print(data)
+            if resp.status == 200:
+              return data
+  except Exception as e:
+      print(e)
+      return None
 
 async def json_to_base_db(username, json_string,_chat_id):
   # Load the JSON data as a Python object
@@ -1345,48 +1356,33 @@ def get_subscription(username):
 
 async def get_profile_by_username(username,_chat_id):
   try:
-    url = f"https://instagram-bulk-profile-scrapper.p.rapidapi.com/clients/api/ig/ig_profile?ig={username}&response_type=short&corsEnabled=false"
-    headers = {
-        'X-RapidAPI-Key': "210233aecbmsh61a7cefbf2c880cp18192cjsnfa3cbdb526ff",
-        'X-RapidAPI-Host': "instagram-bulk-profile-scrapper.p.rapidapi.com"
-    }
-    async with aiohttp.ClientSession() as session:
-        async with session.get(url, headers=headers) as resp:
-          data = await resp.text()
-          print(data)
-          if resp.status == 200:
-            json_data = json_repair.loads(data)
-            for item in json_data:
-                profile_hd = item.get('profile_pic_url_hd')
-                user_id = item.get('pk')
-                username = item.get('username')
-                media_count = item.get('media_count')
-                cache_count = "0"
-                userExist,isSubscribed = get_subscription(username)
-                cache_user_db = deta.Base(username)
-                cache_response = cache_user_db.fetch()
-                cache_count = str(len(cache_response.items))
-                if isSubscribed:
-                  keyboard = InlineKeyboardMarkup([
-                    [ # Row 1 button
-                        InlineKeyboardButton(
-                            text=f'All Media :{media_count}',
-                            callback_data=f'allmedia?_{user_id}'
-                        ),
-                        InlineKeyboardButton(
-                            text=f'Cache :{cache_count}',
-                            callback_data=f'getCache?_{username}'
-                        )
-                    ],
-                    [ # Row 2 button
-                        InlineKeyboardButton(
-                            text=f'✔️ subscribed',
-                            callback_data=f'getsubscription?_{username}?_{user_id}'
-                        )
-                    ]
-                  ])
-                else:
-                  keyboard = InlineKeyboardMarkup([
+    rapid_db = deta.Base("Rapid_API_Keys")
+    response = rapid_db.fetch({"api_name": "Instagram-Data"})
+    for item in response.items:
+      Rapid_api_key = item["key"]
+      url = f"https://instagram-bulk-profile-scrapper.p.rapidapi.com/clients/api/ig/ig_profile?ig={username}&response_type=short&corsEnabled=false"
+      headers = {
+          'X-RapidAPI-Key': Rapid_api_key,
+          'X-RapidAPI-Host': "instagram-bulk-profile-scrapper.p.rapidapi.com"
+      }
+      async with aiohttp.ClientSession() as session:
+          async with session.get(url, headers=headers) as resp:
+            data = await resp.text()
+            print(data)
+            if resp.status == 200:
+              json_data = json_repair.loads(data)
+              for item in json_data:
+                  profile_hd = item.get('profile_pic_url_hd')
+                  user_id = item.get('pk')
+                  username = item.get('username')
+                  media_count = item.get('media_count')
+                  cache_count = "0"
+                  userExist,isSubscribed = get_subscription(username)
+                  cache_user_db = deta.Base(username)
+                  cache_response = cache_user_db.fetch()
+                  cache_count = str(len(cache_response.items))
+                  if isSubscribed:
+                    keyboard = InlineKeyboardMarkup([
                       [ # Row 1 button
                           InlineKeyboardButton(
                               text=f'All Media :{media_count}',
@@ -1399,23 +1395,40 @@ async def get_profile_by_username(username,_chat_id):
                       ],
                       [ # Row 2 button
                           InlineKeyboardButton(
-                              text=f'➕ Subscribe',
+                              text=f'✔️ subscribed',
                               callback_data=f'getsubscription?_{username}?_{user_id}'
                           )
                       ]
-                  ])
-                
-                async with Client("my_account", api_id, api_hash,bot_token=BOT_KEY) as pyroapp:
-                  await pyroapp.send_photo(chat_id  = _chat_id, photo = profile_hd,caption = username,reply_markup=keyboard)
+                    ])
+                  else:
+                    keyboard = InlineKeyboardMarkup([
+                        [ # Row 1 button
+                            InlineKeyboardButton(
+                                text=f'All Media :{media_count}',
+                                callback_data=f'allmedia?_{user_id}'
+                            ),
+                            InlineKeyboardButton(
+                                text=f'Cache :{cache_count}',
+                                callback_data=f'getCache?_{username}'
+                            )
+                        ],
+                        [ # Row 2 button
+                            InlineKeyboardButton(
+                                text=f'➕ Subscribe',
+                                callback_data=f'getsubscription?_{username}?_{user_id}'
+                            )
+                        ]
+                    ])
                   
-            return data
-          else :
-            return None
+                  async with Client("my_account", api_id, api_hash,bot_token=BOT_KEY) as pyroapp:
+                    await pyroapp.send_photo(chat_id  = _chat_id, photo = profile_hd,caption = username,reply_markup=keyboard)
+                    
+              return data
+    return None
   except Exception as e:
             print(e)
             return None 
             
-
 @app.get("/set_webhook")
 async def url_setter():
     """Set the webhook URL for Telegram API"""
