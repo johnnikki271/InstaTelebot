@@ -10,3 +10,4 @@ aiohttp
 pyrogram
 tgcrypto
 python-dotenv
+pytube

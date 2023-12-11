@@ -19,6 +19,8 @@ import http.client
 import subprocess
 #Uncomment the below line if it is codespace
 from dotenv import load_dotenv
+from pytube import YouTube
+
 load_dotenv()
 
 app = FastAPI()
@@ -38,6 +40,8 @@ profile_pattern = r"https?://(www\.)?instagram\.com/([a-zA-Z0-9_.]+)/?\??"
 video_pattern = r"https?://(www\.)?instagram\.com/(tv|reel)/([a-zA-Z0-9_-]+)/?\??"
 # Pattern for Instagram photo URL
 photo_pattern = r"https?://(www\.)?instagram\.com/p/([a-zA-Z0-9_-]+)/?\??"
+#Youtube URL Pattern
+youtube_pattern = r'https?://(?:www.)?(?:m.)?(?:youtube.com|youtu.be)/(?:watch?v=)?([a-zA-Z0-9_-]{11})(?:?.*)?'
 
 def format_size(bytes):
     # Define the step to convert bytes to higher units
@@ -87,6 +91,20 @@ def video_duration(video_file):
         duration_json = json.loads(duration_output.stdout.decode())
         duration = duration_json["format"]["duration"]
         return duration
+        
+    except Exception as e:
+        print(str(e))
+        return None
+
+def video_dimensions(video_file):
+    try:
+        # Extract dimensions information
+        dimensions_command = ["ffprobe", "-v", "quiet", "-of", "json", "-show_entries", "stream=width,height", video_file]
+        dimensions_output = subprocess.run(dimensions_command, capture_output=True)
+        dimensions_json = json.loads(dimensions_output.stdout.decode())
+        width = dimensions_json["streams"][0]["width"]
+        height = dimensions_json["streams"][0]["height"]
+        return width, height
         
     except Exception as e:
         print(str(e))
@@ -967,7 +985,83 @@ async def is_Username_exist(username,_chat_id):
   except Exception as e:
     await send_error("Error in is_Username_exist - " + str(e) ,_chat_id)
     return None
-    
+
+# Function to download video using Pytube
+async def ytube_download_video(url, resolution,chat_id,message_id=""):
+    try:
+        # Get YouTube object
+        youtube_obj = YouTube(url)
+
+        # Get selected resolution stream
+        stream = youtube_obj.streams.get_by_resolution(resolution)
+        stream.download()
+        filename = stream.default_filename
+        video_resolution = stream.resolution # e.g. "1280x720"
+        video_thumbnail = youtube_obj.thumbnail_url
+        thumbnail_file = f"{youtube_obj.title}.jpg"
+        with open(thumbnail_file, "wb") as f:
+            response = urllib.request.urlopen(video_thumbnail)
+            f.write(response.read())
+        #width, height = video_resolution.split("x") # split by "x" and assign to width and height
+        # Download video
+        
+        width, height = video_dimensions(filename)
+        try:
+          async with Client("my_account", api_id, api_hash,bot_token=BOT_KEY) as pyroapp:
+          # Send download confirmation message
+            telegram_message =  await pyroapp.send_video(chat_id  = chat_id, video = filename,height=height,width=width,thumb=thumbnail_file)
+            #await pyroapp.send_message(chat_id, f"Video downloaded successfully!\nTitle: {youtube_obj.title}")
+        except Exception as e:
+           print(e)
+           async with Client("my_account", api_id, api_hash,bot_token=BOT_KEY) as pyroapp:
+              telegram_message =  await pyroapp.send_video(chat_id  = chat_id, video = filename)
+        await delete_message(chat_id,message_id)
+    except Exception as e:
+        # Send error message
+        async with Client("my_account", api_id, api_hash,bot_token=BOT_KEY) as pyroapp:
+          await pyroapp.send_message(chat_id, f"Error downloading video: {e}")
+    finally:
+      if os.path.exists(filename):
+        os.remove(filename)
+      if os.path.exists(thumbnail_file):
+        os.remove(thumbnail_file)
+# Function to get video details and resolutions
+async def get_video_details(url):
+    try:
+        # Get YouTube object
+        youtube_obj = YouTube(url)
+
+        # Get available video streams
+        streams = youtube_obj.streams.filter(progressive=True)
+
+        # Extract resolutions
+        resolutions = [stream.resolution for stream in streams]
+
+        # Create keyboard with resolution options
+        keyboard = InlineKeyboardMarkup([[InlineKeyboardButton(x, callback_data=f"ytube##_{url}##_{x}")] for x in resolutions])
+
+        # Return video title, duration and keyboard
+        return youtube_obj.title, youtube_obj.length, keyboard
+    except Exception as e:
+        return None, None, None
+
+def is_youtube_video(url):
+  # Define the regex pattern for YouTube URL matching
+  youtube_pattern = r'(https?://)?(www\.)?(youtube\.com|youtu\.be)/(watch\?v=|embed/|v/|shorts/)?([-\w]+)'
+  # Try to match the url with the regex pattern
+  try:
+    video_match = re.match(youtube_pattern, url)
+    if video_match:
+      # Return the video ID from the fifth group of the match object
+      code = video_match.group(5)
+      return code
+    else:
+      # Return None if the url does not match the pattern
+      return None
+  except:
+    # Return None if any error or exception occurs
+    return None
+
 def is_Instagram_video(url):
   # Check if the url is a video URL
   video_match = re.match(video_pattern, url)
@@ -1519,6 +1613,11 @@ async def http_handler(request: Request, background_tasks: BackgroundTasks):
         #print(incoming_data)
         #return await send_error(None, "Unknown error, lol, handling coming soon")
     
+    if "ytube" in prompt:
+       url = prompt.split("##_")[1]
+       resolution = prompt.split("##_")[2]
+       background_tasks.add_task(ytube_download_video,url=url,resolution=resolution,chat_id=chat_id,message_id=message_id)
+
     if "allmedia" in prompt:
        userid = prompt.split("?_")[1]
        background_tasks.add_task(get_all_instagram_posts_rotateKey, userid=userid, count=50,_chat_id=chat_id)
@@ -1663,7 +1762,15 @@ async def http_handler(request: Request, background_tasks: BackgroundTasks):
             #background_tasks.add_task(get_all_instagram_posts_rotateKey, username=profile_username, count=50,_chat_id=chat_id)
             background_tasks.add_task(get_profile_by_username, username=profile_username,_chat_id=chat_id)
             #await send_message_text(" - User Not Exist in db - Download Task Started ",chat_id)
-            
+    elif "youtube.com" or "youtu.be" in prompt:
+       if "ytube" not in prompt:
+        if is_youtube_video(prompt):
+            title, duration, keyboard = await get_video_details(prompt)
+            #await send_message_text("Its Youtube Url of video :" + title,chat_id)
+            # Send details and keyboard
+            if title and duration and keyboard:
+              async with Client("my_account", api_id, api_hash,bot_token=BOT_KEY) as pyroapp:
+                await pyroapp.send_message(chat_id, f"**Title:** {title}\n**Duration:** {duration}\n\n**Select Resolution:**", reply_markup=keyboard)
     else:
         response_text = ("This is not a valid Instagram URL")
         await send_message_text(response_text,chat_id)
