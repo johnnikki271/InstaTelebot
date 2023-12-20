@@ -725,7 +725,8 @@ async def get_update_post_handler():
                 ispostExist = await get_post_details_by_shortcode(post_shortcode,item["username"])
                 if ispostExist is None:
                   id = sub_item.get("id", "")
-                  username = sub_item.get("user", {}).get("username", "")
+                  #username = sub_item.get("user", {}).get("username", "")
+                  username = item["username"]
                   owner_id = sub_item.get("user", {}).get("pk", "")
                   original_height = sub_item.get("original_height", "")
                   original_width = sub_item.get("original_width", "")
