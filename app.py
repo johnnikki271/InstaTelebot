@@ -1294,7 +1294,11 @@ async def instagram_post_handler(chat_id: str, req_shortcode: str):
           
           for carousel in sub_item.get('carousel_media', []):
               # Get the list of candidates
-              candidates = carousel.get('image_versions2', {}).get('candidates', [])
+              if carousel.get('media_type') == 1:
+                candidates = carousel.get('image_versions2', {}).get('candidates', [])
+              elif carousel.get('media_type') == 2:
+                candidates = carousel.get('video_versions', {}).get('candidates', [])
+                 
               # Get the last candidate (1080p image)
               last_candidate = candidates[-1] if candidates else {}
               # Get the URL of the image
