@@ -341,7 +341,8 @@ async def send_telegram_group_media(media_urls, _caption, _chat_id, _fileName):
                     chat_id=_chat_id,
                     media=media
                 )
-                await pyroapp.send_message(chat_id=_chat_id, text=_caption)
+                
+                await pyroapp.send_message(chat_id=_chat_id, text=_caption,reply_markup=keyboard)
             except:
                 await pyroapp.send_media_group(
                     chat_id=_chat_id,
@@ -511,7 +512,8 @@ async def upload_and_send_all_post(datalist,chat_id):
       userid = str(owner_id)
       original_height = sub_item.get("original_height", "")
       original_width = sub_item.get("original_width", "")
-      caption = sub_item.get("caption", {}).get("text", "")
+      #caption = sub_item.get("caption", {}).get("text", "")
+      caption = sub_item.get("caption", {}).get("text", "") if sub_item.get("caption") is not None else ""
       product_type = sub_item.get("product_type", "")
       if product_type == "clips" or product_type == "igtv":
         is_video = True
@@ -539,7 +541,11 @@ async def upload_and_send_all_post(datalist,chat_id):
       for carousel in sub_item.get('carousel_media', []):
           # Get the list of candidates
           carousel_count = 1 + carousel_count
-          candidates = carousel.get('image_versions2', {}).get('candidates', [])
+          # Get the list of candidates
+          if carousel.get('media_type') == 1:
+            candidates = carousel.get('image_versions2', {}).get('candidates', [])
+          elif carousel.get('media_type') == 2:
+            candidates = carousel.get('video_versions', {}).get('candidates', [])
           # Get the last candidate (1080p image)
           last_candidate = candidates[0] if candidates else {}
           # Get the URL of the image
@@ -589,7 +595,7 @@ async def upload_and_send_all_post(datalist,chat_id):
             item_type = "GraphVideo"
       await edit_message(f'Processing Media...{str(itercount)}/{Total_media}',chat_id,messageid)
       for item_media in media_objects:
-        if is_video:
+        if item_media.get('media_type') == 'video':
           media_file_name = await upload_file_by_username(item_media.get('url'), "mp4", item_media.get('short_code'), username)
           root, extension = os.path.splitext(media_file_name)
           #thumb_media_file_name = await upload_file_by_username(item_media.get('thumb'), "jpg", "thumb_"+str(shortcode), username)
@@ -754,7 +760,10 @@ async def get_update_post_handler():
                   
                   for carousel in sub_item.get('carousel_media', []):
                       # Get the list of candidates
-                      candidates = carousel.get('image_versions2', {}).get('candidates', [])
+                      if carousel.get('media_type') == 1:
+                        candidates = carousel.get('image_versions2', {}).get('candidates', [])
+                      elif carousel.get('media_type') == 2:
+                        candidates = carousel.get('video_versions', {}).get('candidates', [])
                       # Get the last candidate (1080p image)
                       last_candidate = candidates[-1] if candidates else {}
                       # Get the URL of the image
