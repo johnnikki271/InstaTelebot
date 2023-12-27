@@ -545,7 +545,7 @@ async def upload_and_send_all_post(datalist,chat_id):
           if carousel.get('media_type') == 1:
             candidates = carousel.get('image_versions2', {}).get('candidates', [])
           elif carousel.get('media_type') == 2:
-            candidates = carousel.get('video_versions', {}).get('candidates', [])
+            candidates = carousel.get('video_versions', [])
           # Get the last candidate (1080p image)
           last_candidate = candidates[0] if candidates else {}
           # Get the URL of the image
