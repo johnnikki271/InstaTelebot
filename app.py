@@ -806,9 +806,9 @@ async def get_update_post_handler():
                               caption=caption,comments=comments,likes=likes,views=views,location=location,hashtags=hashtags,mentions=mentions)
                   for item_media in media_objects:
                     if is_video:
-                      media_file_name = await upload_file_by_username(item_media.get('url'), "mp4", shortcode, username)
+                      media_file_name = await upload_file_by_username(item_media.get('url'), "mp4", item_media.get('short_code'), username)
                     else:
-                      media_file_name = await upload_file_by_username(item_media.get('url'), "jpg", shortcode, username)
+                      media_file_name = await upload_file_by_username(item_media.get('url'), "jpg", item_media.get('short_code'), username)
                     media_list.append(media_file_name)
                     
                   for chat_id in chat_ids:
